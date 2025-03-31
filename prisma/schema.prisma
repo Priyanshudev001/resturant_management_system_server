@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgres"
+  url      = env("DATABASE_URL") // Use MySQL
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      String // "ADMIN" or "CASHIER"
+  createdAt DateTime @default(now())
+
+  orders Order[]
+}
+
+model MenuItem {
+  id          String   @id @default(uuid())
+  name        String
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  category    String // "Starter", "Main Course", "Dessert", etc.
+  isAvailable Boolean  @default(true)
+  createdAt   DateTime @default(now())
+
+  orderItems OrderItem[]
+}
+
+model Order {
+  id          String      @id @default(uuid())
+  cashierId   String
+  totalAmount Decimal     @db.Decimal(10, 2)
+  createdAt   DateTime    @default(now())
+  cashier     User        @relation(fields: [cashierId], references: [id])
+  items       OrderItem[]
+  Payment     Payment[]
+}
+
+model OrderItem {
+  id         String  @id @default(uuid())
+  orderId    String
+  menuItemId String
+  quantity   Int
+  price      Decimal @db.Decimal(10, 2)
+
+  order    Order    @relation(fields: [orderId], references: [id])
+  menuItem MenuItem @relation(fields: [menuItemId], references: [id])
+}
+
+model Payment {
+  id            String   @id @default(uuid())
+  orderId       String   @unique
+  amountPaid    Decimal  @db.Decimal(10, 2)
+  paymentMethod String // "Cash", "Card", "UPI"
+  paymentDate   DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id])
+}
