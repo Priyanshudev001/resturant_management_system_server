@@ -8,16 +8,28 @@ app.use(express.json());
 const { PrismaClient } = prisma;
 const prismaClient = new PrismaClient();
 
-// User Registration
 app.post('/auth/register', async (req, res) => {
-    const { name, email, password, role } = req.body;
+    let { name, email, password, role } = req.body;
+
+    console.log("Received Request Body:", req.body); // Debugging log
+
+    // Check if password is missing or empty
     if (!password) {
         return res.status(400).json({ error: "Password is required" });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const user = await prismaClient.user.create({ data: { name, email, password: hashedPassword, role } });
-    res.json(user);
+    password = String(password); // Ensure password is a string
+
+    try {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const user = await prismaClient.user.create({
+            data: { name, email, password: hashedPassword, role }
+        });
+        res.json(user);
+    } catch (error) {
+        console.error("Registration Error:", error);
+        res.status(500).json({ error: "Failed to register user" });
+    }
 });
 
 // User Login
